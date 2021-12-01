@@ -12,9 +12,8 @@ log() {
 
 isAccessTokenExpired() {
   echo "$accessToken" \
-  | cut -d '.' -f 2 \
-  | base64 -d 2> /dev/null \
-  | jq -e '.exp < now' > /dev/null
+  | jq -Re 'split(".")[1] | @base64d | fromjson.exp < now' > /dev/null
+  return
 }
 
 fetchAccessToken() {
