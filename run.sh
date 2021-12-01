@@ -18,25 +18,27 @@ isAccessTokenExpired() {
 
 fetchAccessToken() {
   curl 'https://auth.momentum-mod.org/auth/refresh' \
-    --silent \
+    --fail --silent --show-error \
     -X POST \
     -H 'Content-Type: application/json' \
     --data "{\"refreshToken\": \"$refreshToken\"}" \
   | jq -er '.accessToken'
+  return
 }
 
 fetchRecentActivity() {
   curl "$api/user/activities/followed" \
-    --silent \
+    --fail --silent --show-error \
     -H "Authorization: Bearer $accessToken" \
   | jq \
     --argjson last "$(cat ./last-activity)" \
     ' .activities[] | select(.id > $last and .type == 4) | .id, .data '
+  return
 }
 
 sendRunToDiscord() {
   curl "$api/runs/$1?expand=user,map,rank" \
-    --silent \
+    --fail --silent --show-error \
     -H "Authorization: Bearer $accessToken" \
   | jq -e '
     def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
@@ -56,10 +58,11 @@ sendRunToDiscord() {
     | { embeds: [ . ] }
   ' \
   | curl "$webhook" \
-    --silent \
+    --fail --silent --show-error \
     -X POST \
     -H 'Content-Type: application/json' \
     --data '@-'
+  return
 }
 
 # exp is ~60 minutes
