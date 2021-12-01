@@ -67,7 +67,7 @@ sendRunToDiscord() {
       | .footer.icon_url = "https://momentum-mod.org/favicon.png"
       | .thumbnail.url = $run.user.avatarURL
       | .image.url = $map.images[$rand % ($map.images | length)].large
-      | .fields += [ field("Rank"; "#\($run.rank.rank)") ]
+      | .fields += [ field("Rank"; "#\($run.rank.rank) / \($map.stats.totalUniqueCompletions)") ]
       | .fields += [ field("Run time"; $run.time | fmt) | .inline = true ]
       | .fields += [ field("Run ticks"; $run.ticks) | .inline = true ]
       | { embeds: [ . ] }
