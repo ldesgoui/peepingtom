@@ -10,6 +10,14 @@ log() {
   echo "$(date -Iseconds) | $*"
 }
 
+api() {
+  curl "$api/$1" \
+    --fail --silent --show-error \
+    -H "Authorization: Bearer $accessToken" \
+    "${@:2}"
+  return
+}
+
 isAccessTokenExpired() {
   echo "$accessToken" \
   | jq -Re 'split(".")[1] | @base64d | fromjson.exp < now' > /dev/null
@@ -27,9 +35,7 @@ fetchAccessToken() {
 }
 
 fetchRecentActivity() {
-  curl "$api/user/activities/followed" \
-    --fail --silent --show-error \
-    -H "Authorization: Bearer $accessToken" \
+  api "user/activities/followed" \
   | jq \
     --argjson last "$(cat ./last-activity)" \
     ' .activities[] | select(.id > $last and .type == 4) | .id, .data '
@@ -37,26 +43,31 @@ fetchRecentActivity() {
 }
 
 sendRunToDiscord() {
-  curl "$api/runs/$1?expand=user,map,rank" \
-    --fail --silent --show-error \
-    -H "Authorization: Bearer $accessToken" \
-  | jq -e '
-    def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
-    def field($name; $value): { $name, value: $value | tostring };
-    . as $run
-    | {}
-    | .title = "\($run.user.alias) has improved their personal best on \($run.map.name)"
-    | .url = "https://momentum-mod.org/dashboard/runs/\($run.id)"
-    | .color = if $run.rank.rank == 1 then 16312092 else 4886754 end
-    | .timestamp = $run.createdAt
-    | .footer.text = "Momentum Mod"
-    | .footer.icon_url = "https://momentum-mod.org/favicon.png"
-    | .thumbnail.url = $run.user.avatarURL
-    | .fields += [ field("Rank"; "#\($run.rank.rank)") ]
-    | .fields += [ field("Run time"; $run.time | fmt) | .inline = true ]
-    | .fields += [ field("Run ticks"; $run.ticks) | .inline = true ]
-    | { embeds: [ . ] }
-  ' \
+  run=$(api "runs/$1?expand=user,rank")
+
+  map=$(api "maps/$(jq '.mapID' <<< "$run")?expand=images,stats")
+
+  jq -ne \
+    --argjson run "$run" \
+    --argjson map "$map" \
+    --argjson rand "$RANDOM" \
+    '
+      def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
+      def field($name; $value): { $name, value: $value | tostring };
+      {}
+      | .title = "\($run.user.alias) has improved their personal best on \($map.name)"
+      | .url = "https://momentum-mod.org/dashboard/runs/\($run.id)"
+      | .color = if $run.rank.rank == 1 then 16312092 else 4886754 end
+      | .timestamp = $run.createdAt
+      | .footer.text = "Momentum Mod"
+      | .footer.icon_url = "https://momentum-mod.org/favicon.png"
+      | .thumbnail.url = $run.user.avatarURL
+      | .image.url = $map.images[$rand % ($map.images | length)].large
+      | .fields += [ field("Rank"; "#\($run.rank.rank)") ]
+      | .fields += [ field("Run time"; $run.time | fmt) | .inline = true ]
+      | .fields += [ field("Run ticks"; $run.ticks) | .inline = true ]
+      | { embeds: [ . ] }
+    ' \
   | curl "$webhook" \
     --fail --silent --show-error \
     -X POST \
