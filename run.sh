@@ -54,10 +54,12 @@ sendRunToDiscord() {
     '
       def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
       def field($name; $value): { $name, value: $value | tostring };
+      def colors: [15673641, 8948357, 15658732, 9101876, 7512015, 11370408, 15673641];
+      def rankedColor: colors[1 | until(. >= (colors | length) or ($run.rank.rank / $map.stats.totalUniqueCompletions) >= 1 / pow(2; .); . + 1)];
       {}
       | .title = "\($run.user.alias) has improved their personal best on \($map.name)"
       | .url = "https://momentum-mod.org/dashboard/runs/\($run.id)"
-      | .color = if $run.rank.rank == 1 then 16312092 else 4886754 end
+      | .color = if $run.rank.rank == 1 then 16559934 else rankedColor end
       | .timestamp = $run.createdAt
       | .footer.text = "Momentum Mod"
       | .footer.icon_url = "https://momentum-mod.org/favicon.png"
