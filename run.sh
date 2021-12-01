@@ -51,6 +51,7 @@ sendRunToDiscord() {
     --argjson run "$run" \
     --argjson map "$map" \
     --argjson rand "$RANDOM" \
+    --arg funny "$(cat ./funny-message)" \
     '
       def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
       def field($name; $value): { $name, value: $value | tostring };
@@ -58,6 +59,7 @@ sendRunToDiscord() {
       def rankedColor: colors[1 | until(. >= (colors | length) or ($run.rank.rank / $map.stats.totalUniqueCompletions) >= 1 / pow(2; .); . + 1)];
       {}
       | .title = "\($run.user.alias) has improved their personal best on \($map.name)"
+      | if $rand % 1000 == 0 then .description = $funny else . end
       | .url = "https://momentum-mod.org/dashboard/runs/\($run.id)"
       | .color = if $run.rank.rank == 1 then 16559934 else rankedColor end
       | .timestamp = $run.createdAt
