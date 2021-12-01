@@ -31,7 +31,7 @@ fetchRecentActivity() {
     --silent \
     -H "Authorization: Bearer $accessToken" \
   | jq \
-    --argjson last "$lastActivity" \
+    --argjson last "$(cat ./last-activity)" \
     ' .activities[] | select(.id > $last and .type == 4) | .id, .data '
 }
 
@@ -63,12 +63,10 @@ sendRunToDiscord() {
     --data '@-'
 }
 
-lastActivity=$(cat ./last-activity)
-
 # exp is ~60 minutes
 accessToken=$(fetchAccessToken)
 
-log "I'm running now. The last activity ID I know of is $lastActivity"
+log "I'm running now. The last activity ID I know of is $(cat ./last-activity)"
 
 while true; do
   if isAccessTokenExpired; then
@@ -81,10 +79,10 @@ while true; do
       log "I got a new activity ($id) about run #$data"
       sendRunToDiscord "$data"
 
+      lastActivity=$(cat ./last-activity)
       if (( id > lastActivity )); then
         log "I'm saving that activity ID for later"
-        lastActivity=$id
-        echo "$lastActivity" > ./last-activity
+        echo "$id" > ./last-activity
       fi
     done
 
