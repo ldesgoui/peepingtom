@@ -56,7 +56,7 @@ sendRunToDiscord() {
       def fmt: strftime("`%H:%M:%S.\(. * 1000 % 1000 + 1000 | tostring[1:])`");
       def field($name; $value): { $name, value: $value | tostring };
       def colors: [15673641, 8948357, 15658732, 9101876, 7512015, 11370408];
-      def rankedColor: colors[0 | until(. >= (colors | length) or ($run.rank.rank / $map.stats.totalUniqueCompletions) >= 1 / pow(2; .); . + 1)];
+      def rankedColor: colors[0 | until(. + 1 >= (colors | length) or ($run.rank.rank / $map.stats.totalUniqueCompletions) >= 1 / pow(2; .); . + 1)];
       {}
       | .title = "\($run.user.alias) achieved a \(if $run.rank.rank == 1 then "world record" else "personal best" end) on \($map.name)"
       | if $rand % 1000 == 0 then .description = $funny else . end
