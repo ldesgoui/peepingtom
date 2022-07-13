@@ -38,7 +38,7 @@ fetchRecentActivity() {
   cat <(api "user/activities/followed") <(api "users/$uid/activities") \
   | jq \
     --argjson last "$(cat ./last-activity)" \
-    ' .activities[] | select(.id > $last and .type == 4) | .id, .data '
+    ' .activities[] | select(.id > $last and (.type == 4 or .type == 5)) | .id, .data '
   return
 }
 
